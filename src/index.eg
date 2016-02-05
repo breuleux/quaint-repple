@@ -1,0 +1,176 @@
+
+require:
+   path, fs
+
+
+defaults = {
+   default-language = .earlgrey
+}
+
+reg{@, lang} =
+   @register-resources with {
+      'repple/{lang}.js' => {
+         path = path.join{__dirname, '../client/{lang}.js'}
+         contents = true
+         type = .js
+         method = .head
+      }
+      'repple/install.js' => {
+         path = path.join{__dirname, '../client/install.js'}
+         contents = true
+         type = .js
+         method = .head
+      }
+      'repple/install.js/run' => {
+         path = null
+         contents = "$$quaintReppleInstall();"
+         type = .js
+         method = .body
+         inline = true
+      }
+      'repple/codemirror.css' => {
+         path = path.join{__dirname, '../client/codemirror.css'}
+         contents = true
+         type = .css
+         method = .head
+      }
+      'repple/repple.sass' => {
+         path = path.join{__dirname, '../client/repple.sass'}
+         contents = true
+         type = .sass
+         method = .head
+      }
+   }
+
+var __gid = 0
+
+
+install-card-macros{@, rv} =
+   @register-rules with {
+      "\\maybe\\label/\\code"{engine, {=> label, => var code}} =
+         code = code.raw{}
+         invoke = '{rv}${__gid += 1}'
+         {
+            script[raw] %
+               'function {invoke}() \{ {rv}.process({JSON.stringify{code}}) \}'
+            code.repple-paste[raw] %
+               onclick = '{invoke}()'
+               code
+         }
+   }
+   @
+
+
+card-engine{engine, repple-variable} =
+   install-card-macros{engine.fork{}, repple-variable}
+
+
+install{@, options} =
+   QAst = @quaint.QAst
+
+   leaf{x} =
+      x
+      ;; match x.raw{}:
+      ;;    "true" -> true
+      ;;    "false" -> false
+      ;;    R"^\"\"$"? s -> JSON.parse{s}
+      ;;    R"^-?\d+(\.\d*)?([eE\d-]+)?$"? s -> Number{s}
+      ;;    s -> s
+
+   repl-zone{} =
+      div.repple-interactive %
+         div.repple-scrollback %
+         div.repple-inputline %
+            div.repple-inbanner %
+            div.repple-inputbox %
+               textarea.repple-textarea %
+
+   @register-macros with {
+      repple{engine, type >> type.raw{}, body} =
+
+         _id = [__gid += 1]
+         id = 'repple-{_id}'
+         repple-variable = '$$repple{_id}'
+
+         settings = engine.tools.to-data{body, {= leaf}}
+
+         cards = {=}
+         results = {}
+
+         push-card{cards, cls, name, order, title, contents} =
+            div-id = 'repple-card-{__gid += 1}'
+            div =
+               div %
+                  class = 'card {cls.join{"-"}}'
+                  id = div-id
+                  if{title, h2 % engine.gen{title}, ""}
+                  card-engine{engine, repple-variable}.gen{contents}
+            results.push{div}
+            {
+               = div-id
+               order = order or 0
+            }
+
+         get-cards{match key, value, cls, cards} =
+            R"^\+(?:(\d*)-)?(.*)"! {_, Number! order, key} and match is value ->
+               do:
+                  cards[key] or= {=}
+               String? s or Array? s or QAst? s ->
+                  cards[key].__main =
+                     push-card{cards, cls, key, order, null, s}
+               {=> body = null, => title = null} ->
+                  if body:
+                     cards[key].__main =
+                        push-card{cards, cls, key, order, title, body}
+                  iter-cards{value, cls ++ {key}, cards[key]}
+            else ->
+               pass
+
+         iter-cards{listing, cls, cards} =
+            items{listing} each {key, value} ->
+               get-cards{key, value, cls, cards}
+
+         iter-cards{settings, {}, cards}
+
+         print cards
+
+         config = {
+            div-id = id
+            eval = settings.eval or ""
+            variable = repple-variable
+            = cards
+         }
+         reg{@, .earlgrey}
+         elem =
+            match type:
+               .interactive ->
+                  div.repple-container.repple-interactive-container %
+                     id = id
+                     repl-zone{}
+               .tutorial ->
+                  div.repple-container.repple-tutorial-container %
+                     id = id
+                     repl-zone{}
+                     div.repple-info %
+               .editor ->
+                  print "NOT DONE"
+                  div.repple-container.repple-editor-container %
+                     id = id
+               else ->
+                  throw E.repple{'Unknown repple component: "{type}"'}
+         {
+            elem
+            script[raw] % '$$quaintReppleList.push({JSON.stringify{config}});'
+            .repple-card-data %
+               results
+         }
+   }
+
+
+main{*match} =
+   {@, options = {=}} when @is-quaint-engine ->
+      install{@, options}
+   {options = {=}} ->
+      {@} -> main{@, options}
+
+provide = main
