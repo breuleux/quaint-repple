@@ -22,7 +22,12 @@ globals:
    document, window, alert, setTimeout, Element
    decodeURIComponent
 
-evaluate = eval
+_evaluate = eval
+evaluate{match text} =
+   R"^\{"? ->
+      _evaluate{'({text})'}
+   else ->
+      _evaluate{text}
 
 
 jsrepl{elements} =
