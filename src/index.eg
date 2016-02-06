@@ -76,16 +76,16 @@ install{@, options} =
          else -> x
 
    repl-zone{} =
-      div.repple-interactive %
+      div.repple-repl %
          div.repple-scrollback %
          div.repple-inputline %
             div.repple-inbanner %
             div.repple-inputbox %
-               textarea.repple-repl-textarea %
+               textarea.repple-replarea %
 
    editor-zone{} =
       div.repple-editor %
-         textarea.repple-editor-textarea %
+         textarea.repple-editorarea %
 
    @register-macros with {
 
@@ -136,11 +136,11 @@ install{@, options} =
 
          iter-cards{settings, {}, cards}
 
-         print cards
-
          config = {
+            = type
             div-id = id
-            eval = settings.eval or ""
+            ;; code = settings.code??.raw{} or ""
+            code = if{settings.code, @tools.as-indented-block{settings.code}, ""}
             variable = repple-variable
             = cards
          }
@@ -148,22 +148,23 @@ install{@, options} =
          elem =
             match type:
                .repl ->
-                  div.repple-container.repple-interactive-container %
+                  div.repple-container.repple-repl-container %
                      id = id
                      repl-zone{}
                "repl-aside" ->
-                  div.repple-container.repple-tutorial-container %
+                  div.repple-container.repple-repl-aside-container %
                      id = id
                      repl-zone{}
                      div.repple-aside %
                .editor ->
                   div.repple-container.repple-editor-container %
                      id = id
-                     div.repple-editor %
-                        ee
+                     editor-zone{}
+                     div.repple-aside %
                "editor-repl" ->
-                  div.repple-container.repple-editor-container %
+                  div.repple-container.repple-editor-repl-container %
                      id = id
+                     editor-zone{}
                      repl-zone{}
                else ->
                   throw E.repple{'Unknown repple component: "{type}"'}

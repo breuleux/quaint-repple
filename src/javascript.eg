@@ -4,7 +4,7 @@ require:
    "earlgrey/lib5/expand" ->
       topscope
    repple ->
-      Repl, Outputter
+      Repl, Editor, Outputter
    jquery
    codemirror
    "codemirror/addon/runmode/runmode"
@@ -23,6 +23,7 @@ globals:
    decodeURIComponent
 
 evaluate = eval
+
 
 jsrepl{elements} =
    bindings = elements.bindings or {=}
@@ -43,12 +44,64 @@ jsrepl{elements} =
    repl
 
 
+dom-node-clear{x} =
+   while x.children.length > 0:
+      x.removeChild{x.children[0]}
+
+jseditor{config, repl} =
+   bindings = config.bindings or {=}
+   bindings0 = object with items{bindings} each {k, v} -> {k, global[k]}
+   targets = config.targets or {=}
+   ev = make-eval{evaluate, targets, bindings0, bindings}
+   ed = Editor with {
+      elements = config
+      eval{text} =
+         if repl:
+            ;; repl.process{ed.cm.get-value{}, false}
+            repl.process{"compile()", true}
+            #success{undefined}
+         else:
+            ev.call{this, text}
+      setenv{values} =
+         items{values} each {name, value} ->
+            global[name] = value
+         undefined
+      prepare{} =
+         if config.aside:
+            dom-node-clear{config.aside}
+      success{v} =
+         if config.aside and v !== undefined:
+            Outputter{config.aside, true}.log{v}
+      failure{err} =
+         if config.aside:
+            Outputter{config.aside, true}.log{err}
+      codemirror = codemirror
+      lang = "javascript"
+      theme = "repl"
+   }
+   ed
+
+
+div-names = ___.split{"\n"}.map{x -> x.trim{}}.filter{x -> x} with
+   """
+   repl
+   aside
+   scrollback
+   inputline
+   replarea
+   editor
+   editorarea
+   """
+
 async setup{config} =
+
+   ;; Get all relevant divs
    di = config.div-id
-   box = document.query-selector{'#{di} .repple-interactive'}
+   elements = object with div-names each name ->
+      {name, document.query-selector{'#{di} .repple-{name}'}}
 
    targets = {
-      aside = document.query-selector{'#{di} .repple-aside'}
+      aside = elements.aside
    }
 
    c = Cards with {
@@ -59,31 +112,45 @@ async setup{config} =
    bindings = {
       show-card = c.show-card.bind{c}
       = Into
+      compile{} =
+         if editor and repl:
+            repl.process{editor.cm.get-value{}, false}
+         else:
+            throw E.compile with
+               '"compile" function only valid if there is an editor and a repl'
    }
 
-   repl = jsrepl with {
-      box = box
-      target = document.query-selector{'#{di} .repple-scrollback'}
-      inputline = document.query-selector{'#{di} .repple-inputline'}
-      textarea = document.query-selector{'#{di} .repple-repl-textarea'}
-      = targets
-      = bindings
-   }
+   settings = elements & {= targets, = bindings}
 
-   ;; help.style.height and box.style.height =
-   ;;    '{Math.max{window.inner-height - 250, 500}}px'
-   repl.eval{config.eval or ""}
+   repl = if{settings.repl, jsrepl{settings}, null}
+   editor = if{settings.editor, jseditor{settings, repl}, null}
+
+   if repl:
+      repl.process{config.code or "", false}
+
+   if editor:
+      editor.cm.set-value{config.code}
+
+   focus{} =
+      if repl:
+         repl.cm.focus{}
+      elif editor:
+         editor.cm.focus{}
 
    if config.body-focus:
       document.body.onclick{} =
          if document.get-selection{}.to-string{} == "":
-            repl.cm.focus{}
+            focus{}
 
    if config.focus:
-      repl.cm.focus{}
+      focus{}
 
    global[config.variable] = repl
-   repl
+   {= repl, = editor}
+
+
+   ;; help.style.height and box.style.height =
+   ;;    '{Math.max{window.inner-height - 250, 500}}px'
 
 
 
