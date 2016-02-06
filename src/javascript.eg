@@ -55,13 +55,13 @@ jseditor{config, repl} =
    ev = make-eval{evaluate, targets, bindings0, bindings}
    ed = Editor with {
       elements = config
-      eval{text} =
+      async eval{text} =
          if repl:
-            ;; repl.process{ed.cm.get-value{}, false}
-            repl.process{"compile()", true}
+            await repl.process{"compile()", true}
+            repl.sink{}
             #success{undefined}
          else:
-            ev.call{this, text}
+            await ev.call{this, text}
       setenv{values} =
          items{values} each {name, value} ->
             global[name] = value
