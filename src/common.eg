@@ -1,13 +1,18 @@
 
 require:
    repple ->
-      Outputter
+      Repl, Editor, Outputter
+   codemirror
+   "codemirror/addon/runmode/runmode"
 
 provide:
    fade-in
    Cards
    Into
    make-eval
+   stdrepl
+   stdeditor
+   stdsetup
 
 globals:
    window
@@ -77,86 +82,138 @@ class Cards:
             c[name]
       target.__main
 
-   ;; log{x} =
-   ;;    if @out:
-   ;;       fade-in{@out, x}
-   ;;    else:
-   ;;       x
-
    show-card{*path} =
       target = @get{path}
       contents = document.get-element-by-id{target.div-id}.innerHTML
-      ;; @log{div[raw] % contents}
       Into{@target, div[raw] % contents}
 
-      ;; thecard = @cards.get{name}
-      ;; if not thecard:
-      ;;    throw E.nocard{'No entry found for "{name}"'}
-      ;; if thecard.doc:
-      ;;    fade-in{@out} with
-      ;;       div.card %
-      ;;          if{String{thecard.descr}.starts-with{"..."}
-      ;;             ""
-      ;;             h2 % thecard.descr}
-      ;;          div % thecard.doc
-      ;; undefined
+
+
+stdrepl{elements, settings} =
+   bindings = settings.bindings or {=}
+   bindings0 = object with items{bindings} each {k, v} -> {k, global[k]}
+   targets = settings.targets or {=}
+   repl = Repl with {
+      elements = elements
+      eval = make-eval{settings.evaluate, targets, bindings0, bindings}
+      setenv = settings.setenv
+      continuate = settings.continuate
+      codemirror = codemirror
+      lang = settings.lang
+      theme = settings.theme
+   }
+   repl
+
+
+dom-node-clear{x} =
+   while x.children.length > 0:
+      x.removeChild{x.children[0]}
+
+stdeditor{elements, settings, repl} =
+   bindings = settings.bindings or {=}
+   bindings0 = object with items{bindings} each {k, v} -> {k, global[k]}
+   targets = settings.targets or {=}
+   ev = make-eval{settings.evaluate, targets, bindings0, bindings}
+   ed = Editor with {
+      elements = elements
+      async eval{text} =
+         if repl:
+            await repl.process{"compile()", true}
+            repl.sink{}
+            #success{undefined}
+         else:
+            await ev.call{this, text}
+      ;; setenv{values} =
+      ;;    items{values} each {name, value} ->
+      ;;       global[name] = value
+      ;;    undefined
+      setenv = settings.setenv
+      prepare{} =
+         if elements.aside:
+            dom-node-clear{elements.aside}
+      success{v} =
+         if elements.aside and v !== undefined:
+            Outputter{elements.aside, true}.log{v}
+      failure{err} =
+         if elements.aside:
+            Outputter{elements.aside, true}.log{err}
+      codemirror = codemirror
+      lang = settings.lang
+      theme = settings.theme
+   }
+   ed
 
 
 
+div-names = ___.split{"\n"}.map{x -> x.trim{}}.filter{x -> x} with
+   """
+   repl
+   aside
+   scrollback
+   inputline
+   replarea
+   editor
+   editorarea
+   """
+
+
+async stdsetup{config} =
+
+   ;; Get all relevant divs
+   di = config.div-id
+   elements = object with div-names each name ->
+      {name, document.query-selector{'#{di} .repple-{name}'}}
+
+   targets = {
+      aside = elements.aside
+   }
+
+   c = Cards with {
+      cards = config.cards
+      target = .aside
+   }
+
+   bindings = {
+      show-card = c.show-card.bind{c}
+      = Into
+      compile{} =
+         if editor and repl:
+            repl.process{editor.cm.get-value{}, false}
+         else:
+            throw E.compile with
+               '"compile" function only valid if there is an editor and a repl'
+   }
+
+   settings = config & {
+      = targets
+      = bindings
+   }
+
+   repl = if{elements.repl, stdrepl{elements, settings}, null}
+   editor = if{elements.editor, stdeditor{elements, settings, repl}, null}
+
+   if repl:
+      repl.process{config.code or "", false}
+
+   if editor:
+      editor.cm.set-value{config.code}
+
+   focus{} =
+      if repl:
+         repl.cm.focus{}
+      elif editor:
+         editor.cm.focus{}
+
+   if config.body-focus:
+      document.body.onclick{} =
+         if document.get-selection{}.to-string{} == "":
+            focus{}
+
+   if config.focus:
+      focus{}
+
+   global[config.variable] = repl
+   {= repl, = editor}
 
 
 
-   ;;    $help = Outputter{document.get-element-by-id{"help"}, true}
-
-   ;;    async __show-cool{out, name, history = true} =
-   ;;       thecool = cools.get{name}
-   ;;       if not thecool:
-   ;;          throw E.nocool{'No entry found for {code % name}'}
-   ;;       ;; if thecool.doc:
-   ;;       ;;    fade-in{out} with
-   ;;       ;;       div.card.cool %
-   ;;       ;;          h2 % thecool.descr
-   ;;       ;;          div % thecool.doc
-   ;;       ;;          p % '{b%"Click"} on the code below to execute it (Shift-Click to paste)'
-   ;;       ;;          .coolcode %
-   ;;       ;;             $$clickable{thecool.code}
-   ;;       if thecool.code:
-   ;;          await $repl.process{thecool.code, history}
-   ;;       undefined
-
-   ;;    __show-tut{out, name, history = true} =
-   ;;       thetut = tuts.get{name}
-   ;;       if not thetut:
-   ;;          throw E.notut{'No entry found for {code % name}'}
-   ;;       if thetut.doc:
-   ;;          fade-in{out} with
-   ;;             div.card.tut %
-   ;;                if{String{thetut.descr}.starts-with{"..."}
-   ;;                   ""
-   ;;                   h2 % thetut.descr}
-   ;;                div % thetut.doc
-   ;;       undefined
-
-   ;;    inline-macro cool{x}:
-   ;;       `__show-cool{$out, ^name}` where
-   ;;          name = match x:
-   ;;             #void{} ->
-   ;;                `null`
-   ;;             #value{name} or #symbol{name} ->
-   ;;                #value{name}
-   ;;             else ->
-   ;;                x
-
-   ;;    inline-macro next{#void{}}:
-   ;;       `__show-tut{$help, null}`
-
-   ;;    inline-macro tut{x}:
-   ;;       `__show-tut{$help, ^name}` where
-   ;;          name = match x:
-   ;;             #void{} ->
-   ;;                `null`
-   ;;             #value{name} or #symbol{name} ->
-   ;;                #value{name}
-   ;;             else ->
-   ;;                x
-   ;; ]

@@ -6,21 +6,25 @@ require:
    repple ->
       Repl, Editor, Outputter
    jquery
-   codemirror
+   ;; codemirror
    "codemirror/addon/runmode/runmode"
    "codemirror/mode/javascript/javascript"
-   "codemirror/mode/coffeescript/coffeescript"
-   .earlmode
+   ;; "codemirror/mode/coffeescript/coffeescript"
+   ;; .earlmode
    .common ->
       fade-in, Into, Cards, make-eval
+      stdrepl
+      stdeditor
+      stdsetup
 
 provide:
    setup
 
-globals:
-   System
-   document, window, alert, setTimeout, Element
-   decodeURIComponent
+;; globals:
+;;    ;; System
+;;    ;; document, window, alert, setTimeout, Element
+;;    ;; decodeURIComponent
+;;    document
 
 _evaluate = eval
 evaluate{match text} =
@@ -29,133 +33,159 @@ evaluate{match text} =
    else ->
       _evaluate{text}
 
-
-jsrepl{elements} =
-   bindings = elements.bindings or {=}
-   bindings0 = object with items{bindings} each {k, v} -> {k, global[k]}
-   targets = elements.targets or {=}
-   repl = Repl with {
-      elements = elements
-      eval = make-eval{evaluate, targets, bindings0, bindings}
+async setup{config} =
+   stdsetup with config & {
+      = evaluate
       setenv{values} =
          items{values} each {name, value} ->
             global[name] = value
          undefined
       continuate = R"[{(\[,] *$"
-      codemirror = codemirror
-      lang = "javascript"
-      theme = "repl"
-   }
-   repl
-
-
-dom-node-clear{x} =
-   while x.children.length > 0:
-      x.removeChild{x.children[0]}
-
-jseditor{config, repl} =
-   bindings = config.bindings or {=}
-   bindings0 = object with items{bindings} each {k, v} -> {k, global[k]}
-   targets = config.targets or {=}
-   ev = make-eval{evaluate, targets, bindings0, bindings}
-   ed = Editor with {
-      elements = config
-      async eval{text} =
-         if repl:
-            await repl.process{"compile()", true}
-            repl.sink{}
-            #success{undefined}
-         else:
-            await ev.call{this, text}
-      setenv{values} =
-         items{values} each {name, value} ->
-            global[name] = value
-         undefined
-      prepare{} =
-         if config.aside:
-            dom-node-clear{config.aside}
-      success{v} =
-         if config.aside and v !== undefined:
-            Outputter{config.aside, true}.log{v}
-      failure{err} =
-         if config.aside:
-            Outputter{config.aside, true}.log{err}
-      codemirror = codemirror
-      lang = "javascript"
-      theme = "repl"
-   }
-   ed
-
-
-div-names = ___.split{"\n"}.map{x -> x.trim{}}.filter{x -> x} with
-   """
-   repl
-   aside
-   scrollback
-   inputline
-   replarea
-   editor
-   editorarea
-   """
-
-async setup{config} =
-
-   ;; Get all relevant divs
-   di = config.div-id
-   elements = object with div-names each name ->
-      {name, document.query-selector{'#{di} .repple-{name}'}}
-
-   targets = {
-      aside = elements.aside
+      lang = .javascript
+      theme = config.theme
    }
 
-   c = Cards with {
-      cards = config.cards
-      target = .aside
-   }
 
-   bindings = {
-      show-card = c.show-card.bind{c}
-      = Into
-      compile{} =
-         if editor and repl:
-            repl.process{editor.cm.get-value{}, false}
-         else:
-            throw E.compile with
-               '"compile" function only valid if there is an editor and a repl'
-   }
-
-   settings = elements & {= targets, = bindings}
-
-   repl = if{settings.repl, jsrepl{settings}, null}
-   editor = if{settings.editor, jseditor{settings, repl}, null}
-
-   if repl:
-      repl.process{config.code or "", false}
-
-   if editor:
-      editor.cm.set-value{config.code}
-
-   focus{} =
-      if repl:
-         repl.cm.focus{}
-      elif editor:
-         editor.cm.focus{}
-
-   if config.body-focus:
-      document.body.onclick{} =
-         if document.get-selection{}.to-string{} == "":
-            focus{}
-
-   if config.focus:
-      focus{}
-
-   global[config.variable] = repl
-   {= repl, = editor}
+;; jsrepl{elements} =
+;;    bindings = elements.bindings or {=}
+;;    bindings0 = object with items{bindings} each {k, v} -> {k, global[k]}
+;;    targets = elements.targets or {=}
+;;    repl = Repl with {
+;;       elements = elements
+;;       eval = make-eval{evaluate, targets, bindings0, bindings}
+;;       setenv{values} =
+;;          items{values} each {name, value} ->
+;;             global[name] = value
+;;          undefined
+;;       continuate = R"[{(\[,] *$"
+;;       codemirror = codemirror
+;;       lang = "javascript"
+;;       theme = "repl"
+;;    }
+;;    repl
 
 
-   ;; help.style.height and box.style.height =
-   ;;    '{Math.max{window.inner-height - 250, 500}}px'
+;; dom-node-clear{x} =
+;;    while x.children.length > 0:
+;;       x.removeChild{x.children[0]}
+
+;; jseditor{config, repl} =
+;;    bindings = config.bindings or {=}
+;;    bindings0 = object with items{bindings} each {k, v} -> {k, global[k]}
+;;    targets = config.targets or {=}
+;;    ev = make-eval{evaluate, targets, bindings0, bindings}
+;;    ed = Editor with {
+;;       elements = config
+;;       async eval{text} =
+;;          if repl:
+;;             await repl.process{"compile()", true}
+;;             repl.sink{}
+;;             #success{undefined}
+;;          else:
+;;             await ev.call{this, text}
+;;       setenv{values} =
+;;          items{values} each {name, value} ->
+;;             global[name] = value
+;;          undefined
+;;       prepare{} =
+;;          if config.aside:
+;;             dom-node-clear{config.aside}
+;;       success{v} =
+;;          if config.aside and v !== undefined:
+;;             Outputter{config.aside, true}.log{v}
+;;       failure{err} =
+;;          if config.aside:
+;;             Outputter{config.aside, true}.log{err}
+;;       codemirror = codemirror
+;;       lang = "javascript"
+;;       theme = "repl"
+;;    }
+;;    ed
+
+
+;; div-names = ___.split{"\n"}.map{x -> x.trim{}}.filter{x -> x} with
+;;    """
+;;    repl
+;;    aside
+;;    scrollback
+;;    inputline
+;;    replarea
+;;    editor
+;;    editorarea
+;;    """
+
+
+
+;; async setup{config} =
+
+;;    ;; Get all relevant divs
+;;    di = config.div-id
+;;    elements = object with div-names each name ->
+;;       {name, document.query-selector{'#{di} .repple-{name}'}}
+
+;;    targets = {
+;;       aside = elements.aside
+;;    }
+
+;;    c = Cards with {
+;;       cards = config.cards
+;;       target = .aside
+;;    }
+
+;;    bindings = {
+;;       show-card = c.show-card.bind{c}
+;;       = Into
+;;       compile{} =
+;;          if editor and repl:
+;;             repl.process{editor.cm.get-value{}, false}
+;;          else:
+;;             throw E.compile with
+;;                '"compile" function only valid if there is an editor and a repl'
+;;    }
+
+;;    ;; settings = elements & {= targets, = bindings}
+;;    settings = {
+;;       = targets
+;;       = bindings
+;;       = evaluate
+;;       setenv{values} =
+;;          items{values} each {name, value} ->
+;;             global[name] = value
+;;          undefined
+;;       continuate = R"[{(\[,] *$"
+;;       lang = .javascript
+;;       theme = .repl
+;;    }
+
+;;    repl = if{elements.repl, stdrepl{elements, settings}, null}
+;;    editor = if{elements.editor, stdeditor{elements, settings, repl}, null}
+
+;;    if repl:
+;;       repl.process{config.code or "", false}
+
+;;    if editor:
+;;       editor.cm.set-value{config.code}
+
+;;    focus{} =
+;;       if repl:
+;;          repl.cm.focus{}
+;;       elif editor:
+;;          editor.cm.focus{}
+
+;;    if config.body-focus:
+;;       document.body.onclick{} =
+;;          if document.get-selection{}.to-string{} == "":
+;;             focus{}
+
+;;    if config.focus:
+;;       focus{}
+
+;;    global[config.variable] = repl
+;;    {= repl, = editor}
+
+
+;;    ;; help.style.height and box.style.height =
+;;    ;;    '{Math.max{window.inner-height - 250, 500}}px'
 
 
 
