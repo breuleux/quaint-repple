@@ -1,0 +1,68 @@
+
+require:
+   "earlgrey/5" as eg
+   "earlgrey/lib5/expand" ->
+      topscope
+   .earlmode
+   .common ->
+      fade-in, Into, Cards, make-eval
+      stdrepl
+      stdeditor
+      stdsetup
+
+provide:
+   setup
+
+
+async setup{config} =
+
+   globvar = "$eg$global"
+   gene = eg.Generator with {
+      interactive = true
+      globvar = globvar
+      es5 = true
+      runtime = "earlgrey-runtime"
+   }
+   _ev = eg.evaluator with {
+      globvar = globvar
+      global = global
+      filename = "<repl>"
+      showname = "<repl>"
+      cwd = "<repl>"
+   }
+   glob = global
+
+   async evaluate{text} =
+      code = gene.generate-interactive{eg.Source{text, "<repl>"}}
+      _ev{code}
+
+   setenv{values} =
+      items{values} each {name, value} ->
+         gene.env.bind{topscope, name, #variable{name}}
+         glob[name] = value
+      undefined
+
+   stdsetup with config & {
+
+      = evaluate
+      = setenv
+
+      continuate{match cm} =
+         do:
+            e = cm.lineCount{} - 1
+         when cm.getCursor{}.line < e ->
+            true
+         else ->
+            state = cm.getStateAfter{e}
+            match:
+               when state.mode !== .code
+                    \ or state.nest.length > 1
+                    \ or R"lowprio|op"? state.previous
+                    \ or [state.nest[0][2] > 0 and not R"^\s*$"? cm.getLine{e}] ->
+                  true
+               else ->
+                  false
+
+      lang = .earlgrey
+      theme = config.theme
+   }
