@@ -2,3 +2,5 @@
 node_modules
 egcache
 lib
+client/earlgrey.js
+client/javascript.js
