@@ -3,13 +3,16 @@ require:
    "earlgrey/5" as eg
    "earlgrey/lib5/expand" ->
       topscope
-   repple -> Repl
+   repple ->
+      Repl, Outputter
    jquery
    codemirror
    "codemirror/addon/runmode/runmode"
    "codemirror/mode/javascript/javascript"
    "codemirror/mode/coffeescript/coffeescript"
    .earlmode
+   .common ->
+      fade-in, Into, Cards, make-eval
 
 provide:
    setup
@@ -22,14 +25,12 @@ globals:
 evaluate = eval
 
 jsrepl{elements} =
+   bindings = elements.bindings or {=}
+   bindings0 = object with items{bindings} each {k, v} -> {k, global[k]}
+   targets = elements.targets or {=}
    repl = Repl with {
       elements = elements
-      async eval{text} =
-         try:
-            res = await evaluate{text}
-            #success{res}
-         catch e:
-            #failure{e}
+      eval = make-eval{evaluate, targets, bindings0, bindings}
       setenv{values} =
          items{values} each {name, value} ->
             global[name] = value
@@ -46,18 +47,32 @@ async setup{config} =
    di = config.div-id
    box = document.query-selector{'#{di} .repple-interactive'}
 
+   targets = {
+      aside = document.query-selector{'#{di} .repple-aside'}
+   }
+
+   c = Cards with {
+      cards = config.cards
+      target = .aside
+   }
+
+   bindings = {
+      show-card = c.show-card.bind{c}
+      = Into
+   }
+
    repl = jsrepl with {
       box = box
       target = document.query-selector{'#{di} .repple-scrollback'}
       inputline = document.query-selector{'#{di} .repple-inputline'}
-      textarea = document.query-selector{'#{di} .repple-textarea'}
+      textarea = document.query-selector{'#{di} .repple-repl-textarea'}
+      = targets
+      = bindings
    }
 
-   repl.eval{config.eval or ""}
-
-   ;; help = document.query-selector{'#{di} .repple-info'}
    ;; help.style.height and box.style.height =
    ;;    '{Math.max{window.inner-height - 250, 500}}px'
+   repl.eval{config.eval or ""}
 
    if config.body-focus:
       document.body.onclick{} =

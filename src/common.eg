@@ -1,0 +1,162 @@
+
+require:
+   repple ->
+      Outputter
+
+provide:
+   fade-in
+   Cards
+   Into
+   make-eval
+
+globals:
+   window
+   document
+
+
+fade-in{out, contents} =
+   printed = out.log{contents}
+   printed.style.transition = "opacity 500ms";
+   printed.style.opacity = 0
+   window.getComputedStyle{printed}.opacity
+   printed.style.opacity = 1
+   undefined
+
+
+make-eval{evaluate, targets, bindings0 = null, bindings = null} =
+   ev where async ev{text} =
+      [@] = this
+      try:
+         if bindings0:
+            @setenv{bindings}
+         res = await evaluate{text}
+         if Into? res:
+            if targets[res.location] as loc:
+               fade-in{Outputter{loc, true}, res.contents}
+            elif document.get-element-by-id{res.location} as loc2:
+               fade-in{Outputter{loc2, true}, res.contents}
+            else:
+               #success{res.contents}
+         else:
+            #success{res}
+      catch e:
+         #failure{e}
+      finally:
+         if bindings0:
+            @setenv{bindings0}
+
+
+
+class Into:
+   constructor{@location, @contents} =
+      pass
+
+
+
+class Cards:
+
+   constructor{@config} =
+      [@] &: @config
+      @order-cards{@cards}
+
+   order-cards{cards} =
+      ord = items{cards} each
+         {k, {__main => v and {=> Number? order}}} -> v
+         else -> continue
+      cards.__order = ord.sort with {a, b} -> a.order - b.order
+      cards.__index = -1
+      items{cards} each {k, v} when not k.starts-with{"__"} ->
+         @order-cards{v}
+
+   get{path} =
+      target = path.reduce{f, @cards} where f{c, name} =
+         if name === null:
+            c.__index = [c.__index + 1] mod c.__order.length
+            {__main = c.__order[c.__index]}
+         else:
+            c[name]
+      target.__main
+
+   ;; log{x} =
+   ;;    if @out:
+   ;;       fade-in{@out, x}
+   ;;    else:
+   ;;       x
+
+   show-card{*path} =
+      target = @get{path}
+      contents = document.get-element-by-id{target.div-id}.innerHTML
+      ;; @log{div[raw] % contents}
+      Into{@target, div[raw] % contents}
+
+      ;; thecard = @cards.get{name}
+      ;; if not thecard:
+      ;;    throw E.nocard{'No entry found for "{name}"'}
+      ;; if thecard.doc:
+      ;;    fade-in{@out} with
+      ;;       div.card %
+      ;;          if{String{thecard.descr}.starts-with{"..."}
+      ;;             ""
+      ;;             h2 % thecard.descr}
+      ;;          div % thecard.doc
+      ;; undefined
+
+
+
+
+
+
+   ;;    $help = Outputter{document.get-element-by-id{"help"}, true}
+
+   ;;    async __show-cool{out, name, history = true} =
+   ;;       thecool = cools.get{name}
+   ;;       if not thecool:
+   ;;          throw E.nocool{'No entry found for {code % name}'}
+   ;;       ;; if thecool.doc:
+   ;;       ;;    fade-in{out} with
+   ;;       ;;       div.card.cool %
+   ;;       ;;          h2 % thecool.descr
+   ;;       ;;          div % thecool.doc
+   ;;       ;;          p % '{b%"Click"} on the code below to execute it (Shift-Click to paste)'
+   ;;       ;;          .coolcode %
+   ;;       ;;             $$clickable{thecool.code}
+   ;;       if thecool.code:
+   ;;          await $repl.process{thecool.code, history}
+   ;;       undefined
+
+   ;;    __show-tut{out, name, history = true} =
+   ;;       thetut = tuts.get{name}
+   ;;       if not thetut:
+   ;;          throw E.notut{'No entry found for {code % name}'}
+   ;;       if thetut.doc:
+   ;;          fade-in{out} with
+   ;;             div.card.tut %
+   ;;                if{String{thetut.descr}.starts-with{"..."}
+   ;;                   ""
+   ;;                   h2 % thetut.descr}
+   ;;                div % thetut.doc
+   ;;       undefined
+
+   ;;    inline-macro cool{x}:
+   ;;       `__show-cool{$out, ^name}` where
+   ;;          name = match x:
+   ;;             #void{} ->
+   ;;                `null`
+   ;;             #value{name} or #symbol{name} ->
+   ;;                #value{name}
+   ;;             else ->
+   ;;                x
+
+   ;;    inline-macro next{#void{}}:
+   ;;       `__show-tut{$help, null}`
+
+   ;;    inline-macro tut{x}:
+   ;;       `__show-tut{$help, ^name}` where
+   ;;          name = match x:
+   ;;             #void{} ->
+   ;;                `null`
+   ;;             #value{name} or #symbol{name} ->
+   ;;                #value{name}
+   ;;             else ->
+   ;;                x
+   ;; ]

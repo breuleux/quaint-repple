@@ -69,13 +69,11 @@ install{@, options} =
    QAst = @quaint.QAst
 
    leaf{x} =
-      x
-      ;; match x.raw{}:
-      ;;    "true" -> true
-      ;;    "false" -> false
-      ;;    R"^\"\"$"? s -> JSON.parse{s}
-      ;;    R"^-?\d+(\.\d*)?([eE\d-]+)?$"? s -> Number{s}
-      ;;    s -> s
+      match x.raw{}:
+         "true" -> true
+         "false" -> false
+         "null" -> null
+         else -> x
 
    repl-zone{} =
       div.repple-interactive %
@@ -83,9 +81,14 @@ install{@, options} =
          div.repple-inputline %
             div.repple-inbanner %
             div.repple-inputbox %
-               textarea.repple-textarea %
+               textarea.repple-repl-textarea %
+
+   editor-zone{} =
+      div.repple-editor %
+         textarea.repple-editor-textarea %
 
    @register-macros with {
+
       repple{engine, type >> type.raw{}, body} =
 
          _id = [__gid += 1]
@@ -101,10 +104,11 @@ install{@, options} =
             div-id = 'repple-card-{__gid += 1}'
             div =
                div %
-                  class = 'card {cls.join{"-"}}'
                   id = div-id
-                  if{title, h2 % engine.gen{title}, ""}
-                  card-engine{engine, repple-variable}.gen{contents}
+                  div %
+                     class = 'card {[cls each c -> "card-"+c].join{"-"}}'
+                     if{title, h2 % engine.gen{title}, ""}
+                     card-engine{engine, repple-variable}.gen{contents}
             results.push{div}
             {
                = div-id
@@ -117,7 +121,7 @@ install{@, options} =
                   cards[key] or= {=}
                String? s or Array? s or QAst? s ->
                   cards[key].__main =
-                     push-card{cards, cls, key, order, null, s}
+                     push-card{cards, cls, key, order, key, s}
                {=> body = null, => title = null} ->
                   if body:
                      cards[key].__main =
@@ -143,19 +147,24 @@ install{@, options} =
          reg{@, .earlgrey}
          elem =
             match type:
-               .interactive ->
+               .repl ->
                   div.repple-container.repple-interactive-container %
                      id = id
                      repl-zone{}
-               .tutorial ->
+               "repl-aside" ->
                   div.repple-container.repple-tutorial-container %
                      id = id
                      repl-zone{}
-                     div.repple-info %
+                     div.repple-aside %
                .editor ->
-                  print "NOT DONE"
                   div.repple-container.repple-editor-container %
                      id = id
+                     div.repple-editor %
+                        ee
+               "editor-repl" ->
+                  div.repple-container.repple-editor-container %
+                     id = id
+                     repl-zone{}
                else ->
                   throw E.repple{'Unknown repple component: "{type}"'}
          {
