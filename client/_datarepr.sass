@@ -129,8 +129,6 @@
 .error > *
     display: inline-block;
 
-
-
 .error_type
     font-weight: bold;
     margin-right: 10px;
@@ -138,23 +136,24 @@
 .error_type:after
     content: ":";
 
-
-
-
 .traceback
     display: block;
     white-space: pre;
-
 
 .source, .source *
     display: inline;
     white-space: pre;
 
-
 .sourcepos
     margin-left: 5px;
     margin-right: 5px;
 
+.sourcecode, .sourcecode *
+  display: inline
+
+.location
+  font-family: monospace
+  white-space: pre
 
 .lineno
     border-right: 2px solid #88f;
@@ -164,15 +163,11 @@
     text-align: right;
     min-width: 2em;
 
-
-
 .location > *:first-child > *
     margin-right: 8px;
 
-
 .location, .source
     display: block;
-
 
 .location > .lineno, .location > .sourcecode
     display: inline;
