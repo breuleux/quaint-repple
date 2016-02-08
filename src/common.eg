@@ -38,8 +38,10 @@ make-eval{evaluate, targets, bindings0 = null, bindings = null} =
          if Into? res:
             if targets[res.location] as loc:
                fade-in{Outputter{loc, true}, res.contents}
+               #success{undefined}
             elif document.get-element-by-id{res.location} as loc2:
                fade-in{Outputter{loc2, true}, res.contents}
+               #success{undefined}
             else:
                #success{res.contents}
          else:
@@ -116,6 +118,7 @@ stdeditor{elements, settings, repl} =
    ev = make-eval{settings.evaluate, targets, bindings0, bindings}
    ed = Editor with {
       elements = elements
+      ;; line-numbers = true
       async eval{text} =
          if repl:
             await repl.process{"compile()", true}
