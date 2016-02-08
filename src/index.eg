@@ -5,10 +5,11 @@ require:
 
 defaults = {
    language = .javascript
-   theme = .repl
+   theme = .default
 }
 
 reg{@, lang, theme} =
+
    @register-resources with {
       'repple/{lang}.js' => {
          path = path.join{__dirname, '../client/{lang}.js'}
@@ -42,6 +43,16 @@ reg{@, lang, theme} =
          method = .head
       }
    }
+
+   if theme !== .default:
+      @register-resources with {
+         'repple/{theme}.css' => {
+            path = path.join{__dirname, '../theme/{theme}.css'}
+            contents = true
+            type = .css
+            method = .head
+         }
+      }
 
 var __gid = 0
 
@@ -141,6 +152,7 @@ install{@, _options} =
          iter-cards{settings, {}, cards}
 
          language = settings.language??.raw{} or options.language
+         theme = settings.theme??.raw{} or options.theme
 
          config = {
             = type
@@ -150,9 +162,9 @@ install{@, _options} =
             variable = repple-variable
             = cards
             = language
-            theme = options.theme
+            = theme
          }
-         reg{@, language, options.theme}
+         reg{@, language, theme}
          elem =
             match type:
                .repl ->
