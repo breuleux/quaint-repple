@@ -28,13 +28,22 @@ fade-in{out, contents} =
    undefined
 
 
+class ReloadAfterPromise:
+   constructor{@promise} =
+      pass
+
+
 make-eval{evaluate, targets, bindings0 = null, bindings = null} =
    ev where async ev{text} =
       [@] = this
       try:
          if bindings0:
             @setenv{bindings}
-         res = await evaluate{text}
+         try:
+            res = await evaluate{text}
+         catch ReloadAfterPromise? rp:
+            await rp.promise
+            return ev{text}
          if Into? res:
             if targets[res.location] as loc:
                fade-in{Outputter{loc, true}, res.contents}
@@ -51,8 +60,6 @@ make-eval{evaluate, targets, bindings0 = null, bindings = null} =
       finally:
          if bindings0:
             @setenv{bindings0}
-
-
 
 class Into:
    constructor{@location, @contents} =
@@ -179,6 +186,7 @@ async stdsetup{config} =
    bindings = {
       show-card = c.show-card.bind{c}
       = Into
+      = ReloadAfterPromise
       compile{} =
          if editor and repl:
             repl.process{editor.cm.get-value{}, false}
