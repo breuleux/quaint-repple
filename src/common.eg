@@ -33,12 +33,20 @@ class ReloadAfterPromise:
       pass
 
 
-make-eval{evaluate, targets, bindings0 = null, bindings = null} =
+make-eval{evaluate
+          targets
+          bindings0 = null
+          bindings = null
+          dynamic-bindings = null} =
    ev where async ev{text} =
       [@] = this
       try:
          if bindings0:
             @setenv{bindings}
+         if dynamic-bindings:
+            @setenv with object with
+               items{dynamic-bindings} each {k, f} ->
+                  {k, f{}}
          try:
             res = await evaluate{text}
          catch ReloadAfterPromise? rp:
@@ -100,17 +108,24 @@ class Cards:
 
 stdrepl{elements, settings} =
    bindings = settings.bindings or {=}
-   bindings0 = object with items{bindings} each {k, v} -> {k, global[k]}
+   dynb = settings.dynamic-bindings
+   bindings0 =
+      if settings.reset-bindings:
+         object with items{bindings} each {k, v} -> {k, global[k]}
+      else:
+         null
    targets = settings.targets or {=}
    repl = Repl with {
       elements = elements
-      eval = make-eval{settings.evaluate, targets, bindings0, bindings}
+      eval = make-eval{settings.evaluate, targets, bindings0, bindings, dynb}
       setenv = settings.setenv
       continuate = settings.continuate
       codemirror = codemirror
       lang = settings.lang
       theme = settings.theme
    }
+   if not bindings0:
+      repl.setenv{bindings}
    repl
 
 
@@ -120,9 +135,14 @@ dom-node-clear{x} =
 
 stdeditor{elements, settings, repl} =
    bindings = settings.bindings or {=}
-   bindings0 = object with items{bindings} each {k, v} -> {k, global[k]}
+   dynb = settings.dynamic-bindings
+   bindings0 =
+      if settings.reset-bindings:
+         object with items{bindings} each {k, v} -> {k, global[k]}
+      else:
+         null
    targets = settings.targets or {=}
-   ev = make-eval{settings.evaluate, targets, bindings0, bindings}
+   ev = make-eval{settings.evaluate, targets, bindings0, bindings, dynb}
    ed = Editor with {
       elements = elements
       ;; line-numbers = true
@@ -133,10 +153,6 @@ stdeditor{elements, settings, repl} =
             #success{undefined}
          else:
             await ev.call{this, text}
-      ;; setenv{values} =
-      ;;    items{values} each {name, value} ->
-      ;;       global[name] = value
-      ;;    undefined
       setenv = settings.setenv
       prepare{} =
          if elements.aside:
@@ -151,6 +167,8 @@ stdeditor{elements, settings, repl} =
       lang = settings.lang
       theme = settings.theme
    }
+   if not bindings0:
+      repl.setenv{bindings}
    ed
 
 
@@ -195,9 +213,15 @@ async stdsetup{config} =
                '"compile" function only valid if there is an editor and a repl'
    }
 
+   dynamic-bindings = {
+      $out{} =
+         repl.repple.io[repl.repple.current]
+   }
+
    settings = config & {
       = targets
       = bindings
+      = dynamic-bindings
    }
 
    repl = if{elements.repl, stdrepl{elements, settings}, null}
@@ -224,6 +248,10 @@ async stdsetup{config} =
       focus{}
 
    global[config.variable] = repl
+
+   if repl:
+      repl.setenv{}
+
    {= repl, = editor}
 
 

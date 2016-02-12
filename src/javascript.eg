@@ -24,6 +24,7 @@ async setup{config} =
          items{values} each {name, value} ->
             global[name] = value
          undefined
+      reset-bindings = true
       continuate = R"[{(\[,] *$"
       lang = .javascript
       theme = config.theme
