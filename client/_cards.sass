@@ -1,63 +1,89 @@
 
+.repple-paste
+  border: 2px solid #d8d8ff;
+  margin: 2px;
+  display: inline-block;
+  cursor: pointer;
+  font-family: monospace;
+  white-space: pre;
+  background-color: #f8f8ff;
+
+.repple-paste:hover
+  background-color: #e8e8ff
 
 
 .card
-    display: block;
-    border: 2px solid black;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    box-shadow: 5px 5px 0px #eee;
+  display: block;
+  border: 2px solid black;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  box-shadow: 5px 5px 0px #eee;
 
-
-.card > *
-    padding-left: 5px;
-    padding-right: 5px;
-
-
-.coolcode
-    display: block;
-    margin: 5px auto 5px auto;
-
-
-.coolcode > .clickable
-    display: block;
-    margin: 5px auto 5px auto;
-
-
-
-h2
+  h2
     margin-top: 0px;
     margin-bottom: 0.5em;
     background-color: #000;
     color: white;
     padding: 10px;
+    code
+      background-color: #66a;
+
+  table
+    border: 2px solid black
+  tr:nth-child(odd)
+    background: #f8f8ff
+  tr:nth-child(even)
+    background: #eeeef8
+  th, td
+    border: 1px solid #ccc
+    border-right: 1px solid black
+    padding: 2px
+
+  .blocks .repple-paste
+    display: block
+    width: 100%
+    box-sizing: border-box
+
+.card > *
+  padding-left: 5px;
+  padding-right: 5px;
 
 
-.tut h2
-    background-color: #66a;
+.card
+  .note:before
+    content: "Note: "
+    font-weight: bold
+  .note
+    color: #550
+    background-color: #ffd
 
+  .tip:before
+    content: "Tip: "
+    font-weight: bold
+  .tip
+    color: #005
+    background-color: #ddf
 
-.cool h2
-    background-color: #a6a;
+  .warning:before
+    content: "Warning: "
+    font-weight: bold
+  .warning
+    color: #500
+    background-color: #fdd
 
+  .success:before
+    content: "Success: "
+    font-weight: bold
+  .success
+    color: #050
+    background-color: #dfd
 
-h2 code
-    background-color: #66a;
-
-
-.big
-    display: block;
-    font-size: 14pt;
-    margin-left: 30px;
-
-
-.big:before
-    content: "\25b6";
-    color: orange;
-    margin-right: 10px;
-
-
+  .note, .tip, .warning, .success
+    display: block
+    margin-top: 10px
+    margin-bottom: 10px
+    padding: 10px
 
