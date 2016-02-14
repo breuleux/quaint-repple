@@ -155,10 +155,10 @@ CodeMirror.defineMode{"earlgrey"} with {config, parserConfig} ->
                         when stream.match{R" +(with|where|when|and|not|or|in|mod|each|as|of|is)( |$)", false} ->
                            state.previous = .id
                            "variable"
-                        when stream.match{R" *:| +[A-Za-z0-9$\[\{\"]", false} ->
+                        when stream.match{R" *:| +[A-Za-z0-9$\[\{\(\"]", false} ->
                            state.previous = .id
                            "keyword"
-                        when stream.match{R" +[+\-*/~^<>=%&|?!@#.:']+[A-Za-z0-9$\[\{]", false} ->
+                        when stream.match{R" +[+\-*/~^<>=%&|?!@#.:']+[A-Za-z0-9$\[\{\(]", false} ->
                            state.previous = .id
                            "keyword"
                         else ->
