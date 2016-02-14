@@ -121,7 +121,7 @@ install{@, _options} =
                div %
                   id = div-id
                   div %
-                     class = 'card {[cls each c -> "card-"+c].join{"-"}}'
+                     class = 'repple-card {[cls each c -> "repple-card-"+c].join{"-"}}'
                      if{title, h2 % engine.gen{title}, ""}
                      div %
                         card-engine{engine, repple-variable}.gen{contents}
