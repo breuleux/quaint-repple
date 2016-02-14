@@ -60,11 +60,11 @@ var __gid = 0
 install-card-macros{@, rv} =
    @register-rules with {
       "\\maybe\\label/\\code"{engine, {=> label, => var code}} =
-         code = code.raw{}
+         code = @tools.as-indented-block{code.shed{}}
          invoke = '{rv}${__gid += 1}'
          {
             script[raw] %
-               'function {invoke}() \{ {rv}.process({JSON.stringify{code}}) \}'
+               'function {invoke}() \{ {rv}.process({JSON.stringify{code}}, true, true) \}'
             code.repple-paste[raw] %
                onclick = '{invoke}()'
                code
@@ -123,7 +123,8 @@ install{@, _options} =
                   div %
                      class = 'card {[cls each c -> "card-"+c].join{"-"}}'
                      if{title, h2 % engine.gen{title}, ""}
-                     card-engine{engine, repple-variable}.gen{contents}
+                     div %
+                        card-engine{engine, repple-variable}.gen{contents}
             results.push{div}
             {
                = div-id
@@ -131,16 +132,18 @@ install{@, _options} =
             }
 
          get-cards{match key, value, cls, cards} =
-            R"^\+(?:(\d*)-)?(.*)"! {_, Number! order, key} and match is value ->
+            R"^\+(?:(\d*)-)?(?:([^-]*)-)?(.*)"!
+                  \ {_, Number! order, var key, title} and match is value ->
                do:
+                  key or= title
                   cards[key] or= {=}
                String? s or Array? s or QAst? s ->
                   cards[key].__main =
-                     push-card{cards, cls, key, order, key, s}
-               {=> body = null, => title = null} ->
+                     push-card{cards, cls, key, order, title, s}
+               {=> body = null, title => _title = null} ->
                   if body:
                      cards[key].__main =
-                        push-card{cards, cls, key, order, title, body}
+                        push-card{cards, cls, key, order, _title or title, body}
                   iter-cards{value, cls ++ {key}, cards[key]}
             else ->
                pass
