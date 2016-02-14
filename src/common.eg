@@ -4,6 +4,8 @@ require:
       Repl, Editor, Outputter
    codemirror
    "codemirror/addon/runmode/runmode"
+   /html
+   /dom
 
 provide:
    fade-in
@@ -13,6 +15,7 @@ provide:
    stdrepl
    stdeditor
    stdsetup
+   colorize
 
 globals:
    window
@@ -106,26 +109,43 @@ class Cards:
 
 
 
-stdrepl{elements, settings} =
-   bindings = settings.bindings or {=}
-   dynb = settings.dynamic-bindings
-   bindings0 =
+fill-bindings{settings} =
+   settings.bindings or= {=}
+   settings.bindings0 =
       if settings.reset-bindings:
-         object with items{bindings} each {k, v} -> {k, global[k]}
+         object with items{settings.bindings} each
+            {k, v} -> {k, global[k]}
       else:
          null
-   targets = settings.targets or {=}
+   settings.targets or= {=}
+   settings
+
+stdrepl{elements, fill-bindings! settings} =
+   ;; bindings = settings.bindings or {=}
+   ;; dynb = settings.dynamic-bindings
+   ;; bindings0 =
+   ;;    if settings.reset-bindings:
+   ;;       object with items{bindings} each {k, v} -> {k, global[k]}
+   ;;    else:
+   ;;       null
+   ;; targets = settings.targets or {=}
    repl = Repl with {
       elements = elements
-      eval = make-eval{settings.evaluate, targets, bindings0, bindings, dynb}
+      eval = make-eval{
+         settings.evaluate
+         settings.targets
+         settings.bindings0
+         settings.bindings
+         settings.dynamic-bindings
+      }
       setenv = settings.setenv
       continuate = settings.continuate
       codemirror = codemirror
       lang = settings.lang
       theme = settings.theme
    }
-   if not bindings0:
-      repl.setenv{bindings}
+   if not settings.bindings0:
+      repl.setenv{settings.bindings}
    repl
 
 
@@ -134,15 +154,22 @@ dom-node-clear{x} =
       x.removeChild{x.children[0]}
 
 stdeditor{elements, settings, repl} =
-   bindings = settings.bindings or {=}
-   dynb = settings.dynamic-bindings
-   bindings0 =
-      if settings.reset-bindings:
-         object with items{bindings} each {k, v} -> {k, global[k]}
-      else:
-         null
-   targets = settings.targets or {=}
-   ev = make-eval{settings.evaluate, targets, bindings0, bindings, dynb}
+   ;; bindings = settings.bindings or {=}
+   ;; dynb = settings.dynamic-bindings
+   ;; bindings0 =
+   ;;    if settings.reset-bindings:
+   ;;       object with items{bindings} each {k, v} -> {k, global[k]}
+   ;;    else:
+   ;;       null
+   ;; targets = settings.targets or {=}
+   ;; ev = make-eval{settings.evaluate, targets, bindings0, bindings, dynb}
+   ev = make-eval{
+      settings.evaluate
+      settings.targets
+      settings.bindings0
+      settings.bindings
+      settings.dynamic-bindings
+   }
    ed = Editor with {
       elements = elements
       ;; line-numbers = true
@@ -167,8 +194,8 @@ stdeditor{elements, settings, repl} =
       lang = settings.lang
       theme = settings.theme
    }
-   if not bindings0:
-      repl.setenv{bindings}
+   if not settings.bindings0:
+      repl.setenv{settings.bindings}
    ed
 
 
@@ -203,7 +230,9 @@ async stdsetup{config} =
 
    bindings = {
       show-card = c.show-card.bind{c}
+      = dom
       = Into
+      = Outputter
       = ReloadAfterPromise
       compile{} =
          if editor and repl:
@@ -211,11 +240,12 @@ async stdsetup{config} =
          else:
             throw E.compile with
                '"compile" function only valid if there is an editor and a repl'
-   }
+   } & [config.bindings or {=}]
 
    dynamic-bindings = {
-      $out{} =
-         repl.repple.io[repl.repple.current]
+      $out{} = repl.repple.io[repl.repple.current]
+      $repl{} = repl
+      $repple{} = repl
    }
 
    settings = config & {
@@ -252,7 +282,22 @@ async stdsetup{config} =
    if repl:
       repl.setenv{}
 
+   colorize{config.lang, config.theme}
+
    {= repl, = editor}
 
 
+colorize{lang, theme} =
+   document.query-selector-all{".repple-paste"} each elem ->
+      hl = {}
+      codemirror.run-mode{elem.text-content, lang} with {text, style} ->
+         hl.push with
+            if style:
+               then: span[^[".cm-" + style]] % text
+               else: span % text
+      elem.innerHTML =
+         html with
+            span %
+               class = 'cm-s-{theme}'
+               hl
 
