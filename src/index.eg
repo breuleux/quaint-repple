@@ -166,6 +166,7 @@ install{@, _options} =
             = cards
             = language
             = theme
+            after = settings.after??.raw{} or null
          }
          reg{@, language, theme}
          elem =
