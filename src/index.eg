@@ -160,7 +160,6 @@ install{@, _options} =
          config = {
             = type
             div-id = id
-            ;; code = settings.code??.raw{} or ""
             code = if{settings.code, @tools.as-indented-block{settings.code}, ""}
             variable = repple-variable
             = cards
