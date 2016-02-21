@@ -2,7 +2,9 @@
 require:
    inquirer-promise as inq
    chalk
+   path, fs
 
+styles-dir = path.join{__dirname, '../theme/'}
 
 async quaint-setup{config, instructions} =
    url = "https://github.com/breuleux/quaint-repple"
@@ -10,7 +12,25 @@ async quaint-setup{config, instructions} =
 
    data = config.plugins["repple"] or= {=}
 
-   ;; data.thing = await inq.input{"Something", {default = "whatever"}}
+   data.language = await inq.list{"What default language do you want to use?"
+                                  options, {default = 0}} where
+      options = {.javascript, .earlgrey}
+
+   data.theme = await inq.list{"What theme do you want to use?",
+                               themes, {default = 1}} where
+      themes = {
+         "Choose a file..."
+         "default"
+         new inq.Separator{}
+         *[
+            fs.readdir-sync{styles-dir} each name ->
+               if name.ends-with{".css"} and name !== "default.css":
+                  name[... -4]
+               else:
+                  continue
+         ]
+         new inq.Separator{}
+      }
 
 
 provide = quaint-setup
