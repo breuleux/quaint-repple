@@ -245,6 +245,7 @@ async stdsetup{config} =
    dynamic-bindings = {
       $out{} = repl.repple.io[repl.repple.current]
       $repl{} = repl
+      $editor{} = editor
       $repple{} = repl
    }
 
