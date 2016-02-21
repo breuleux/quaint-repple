@@ -32,7 +32,8 @@
     "earl-mocha": ">=0.0.3"
   },
   "scripts": {
-    "pack": "browserify -r ./lib/earlgrey.js:quaint-repple-earlgrey > client/earlgrey.js; browserify -r ./lib/javascript.js:quaint-repple-javascript > client/javascript.js",
+    "pack": "browserify -r ./lib/earlgrey.js:quaint-repple-earlgrey | uglifyjs -c -m > client/earlgrey.js; browserify -r ./lib/javascript.js:quaint-repple-javascript | uglifyjs -c -m > client/javascript.js",
+    "packlight": "browserify -r ./lib/earlgrey.js:quaint-repple-earlgrey > client/earlgrey.js; browserify -r ./lib/javascript.js:quaint-repple-javascript > client/javascript.js",
     "refresh": "earl compile -5vso lib/ src/",
     "compile": "earl compile -5rvso lib/ src/",
     "prepublish": "npm run compile && npm run pack",
