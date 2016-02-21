@@ -1,7 +1,11 @@
 
 # quaint-repple
 
-Embed a REPL in Quaint
+Embed a REPL in Quaint.
+
+Example of `quaint-repple in action (for the Earl Grey language):
+http://earl-grey.io/repl.html
+
 
 ## Install
 
