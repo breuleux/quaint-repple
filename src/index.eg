@@ -104,26 +104,6 @@ reg{@, lang, theme} =
          }
       }
 
-   match theme-lightness[theme]:
-      .light ->
-         @register-resources with {
-            'repple/light.sass' => {
-               path = path.join{__dirname, '../client/light.sass'}
-               contents = true
-               type = .sass
-               method = .head
-            }
-         }
-      else ->
-         @register-resources with {
-            'repple/dark.sass' => {
-               path = path.join{__dirname, '../client/dark.sass'}
-               contents = true
-               type = .sass
-               method = .head
-            }
-         }
-
 
 var __gid = 0
 
