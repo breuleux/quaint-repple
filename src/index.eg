@@ -8,6 +8,56 @@ defaults = {
    theme = .default
 }
 
+
+theme-lightness = {
+   '3024-day' => .light
+   '3024-night' => .dark
+   'abcdef' => .dark
+   'ambiance' => .dark
+   'base16-dark' => .dark
+   'base16-light' => .light
+   'bespin' => .dark
+   'blackboard' => .dark
+   'cobalt' => .dark
+   'colorforth' => .dark
+   'default' => .light
+   'dracula' => .dark
+   'eclipse' => .light
+   'elegant' => .light
+   'erlang-dark' => .dark
+   'hopscotch' => .dark
+   'icecoder' => .dark
+   'isotope' => .dark
+   'lesser-dark' => .dark
+   'liquibyte' => .dark
+   'material' => .dark
+   'mbo' => .dark
+   'mdn-like' => .light
+   'midnight' => .dark
+   'monokai' => .dark
+   'neat' => .light
+   'neo' => .light
+   'night' => .dark
+   'paraiso-dark' => .dark
+   'paraiso-light' => .light
+   'pastel-on-dark' => .dark
+   'railscasts' => .dark
+   'rubyblue' => .dark
+   'seti' => .dark
+   'solarized' => .light
+   'the-matrix' => .dark
+   'tomorrow-night-bright' => .dark
+   'tomorrow-night-eighties' => .dark
+   'ttcn' => .light
+   'twilight' => .dark
+   'vibrant-ink' => .dark
+   'xq-dark' => .dark
+   'xq-light' => .light
+   'yeti' => .light
+   'zenburn' => .dark
+}
+
+
 reg{@, lang, theme} =
 
    @register-resources with {
@@ -53,6 +103,27 @@ reg{@, lang, theme} =
             method = .head
          }
       }
+
+   match theme-lightness[theme]:
+      .light ->
+         @register-resources with {
+            'repple/light.sass' => {
+               path = path.join{__dirname, '../client/light.sass'}
+               contents = true
+               type = .sass
+               method = .head
+            }
+         }
+      else ->
+         @register-resources with {
+            'repple/dark.sass' => {
+               path = path.join{__dirname, '../client/dark.sass'}
+               contents = true
+               type = .sass
+               method = .head
+            }
+         }
+
 
 var __gid = 0
 
@@ -168,25 +239,30 @@ install{@, _options} =
             after = settings.after??.raw{} or null
          }
          reg{@, language, theme}
+         theme2 = 'repple-theme-{theme-lightness[theme]}'
          elem =
             match type:
                .repl ->
                   div.repple-container.repple-repl-container %
                      id = id
+                     class = theme2
                      repl-zone{}
                "repl-aside" ->
                   div.repple-container.repple-repl-aside-container %
                      id = id
+                     class = theme2
                      repl-zone{}
                      div.repple-aside %
                .editor ->
                   div.repple-container.repple-editor-container %
                      id = id
+                     class = theme2
                      editor-zone{}
                      div.repple-aside %
                "editor-repl" ->
                   div.repple-container.repple-editor-repl-container %
                      id = id
+                     class = theme2
                      editor-zone{}
                      repl-zone{}
                else ->
