@@ -9,9 +9,12 @@ require:
       stdrepl
       stdeditor
       stdsetup
+      codemirror
 
 provide:
    setup
+   codemirror
+   stdsetup
 
 
 async setup{config} =

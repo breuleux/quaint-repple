@@ -6,16 +6,22 @@ require:
       stdrepl
       stdeditor
       stdsetup
+      codemirror
 
 provide:
    setup
+   codemirror
+   stdsetup
+
 
 _evaluate = eval
+
 evaluate{match text} =
    R"^\{"? ->
       _evaluate{'({text})'}
    else ->
       _evaluate{text}
+
 
 async setup{config} =
    stdsetup with config & {
