@@ -16,6 +16,7 @@ provide:
    stdeditor
    stdsetup
    colorize
+   codemirror
 
 globals:
    window
@@ -143,6 +144,7 @@ stdrepl{elements, fill-bindings! settings} =
       codemirror = codemirror
       lang = settings.lang
       theme = settings.theme
+      indent = settings.indent
    }
    if not settings.bindings0:
       repl.setenv{settings.bindings}
@@ -153,7 +155,7 @@ dom-node-clear{x} =
    while x.children.length > 0:
       x.removeChild{x.children[0]}
 
-stdeditor{elements, settings, repl} =
+stdeditor{elements, fill-bindings! settings, repl} =
    ;; bindings = settings.bindings or {=}
    ;; dynb = settings.dynamic-bindings
    ;; bindings0 =
@@ -193,9 +195,10 @@ stdeditor{elements, settings, repl} =
       codemirror = codemirror
       lang = settings.lang
       theme = settings.theme
+      indent = settings.indent
    }
    if not settings.bindings0:
-      repl.setenv{settings.bindings}
+      ed.setenv{settings.bindings}
    ed
 
 
@@ -228,12 +231,28 @@ async stdsetup{config} =
       target = .aside
    }
 
+   out-aside =
+      if elements.aside:
+         Outputter{elements.aside}
+      else:
+         null
+
+   log = out-aside??.log.bind{out-aside}
+   h{tag, *args} =
+      {props, children} = match args:
+         {Array? or String? or ENode?, *} -> {{=}, args}
+         {props, *children} -> {props, children}
+      ENode{tag.split{R" *(?=[.#]|$)"}, props, children}
+
    bindings = {
       show-card = c.show-card.bind{c}
       = dom
       = Into
       = Outputter
       = ReloadAfterPromise
+      = log
+      = h
+      logh{text} = log{div[raw] % text}
       compile{} =
          if editor and repl:
             repl.process{editor.cm.get-value{}, false}
@@ -243,7 +262,7 @@ async stdsetup{config} =
    } & [config.bindings or {=}]
 
    dynamic-bindings = {
-      $out{} = repl.repple.io[repl.repple.current]
+      $out{} = repl??.repple.io[repl.repple.current]
       $repl{} = repl
       $editor{} = editor
       $repple{} = repl
@@ -263,6 +282,8 @@ async stdsetup{config} =
 
    if editor:
       editor.cm.set-value{config.code}
+      if not repl:
+         editor.eval{config.code}
 
    focus{} =
       if repl:
@@ -278,14 +299,14 @@ async stdsetup{config} =
    if config.focus:
       focus{}
 
-   global[config.variable] = repl
+   rval = {= repl, = editor, = config}
+   global[config.variable] = rval
 
    if repl:
       repl.setenv{}
 
    colorize{config.lang, config.theme}
 
-   rval = {= repl, = editor}
    match config.after:
       Function? f ->
          f{rval}
@@ -294,6 +315,7 @@ async stdsetup{config} =
       else ->
          rval
 
+   rval
 
 colorize{lang, theme} =
    document.query-selector-all{".repple-paste"} each elem ->

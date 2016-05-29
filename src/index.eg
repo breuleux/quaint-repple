@@ -115,7 +115,7 @@ install-card-macros{@, rv} =
          invoke = '{rv}${__gid += 1}'
          {
             script[raw] %
-               'function {invoke}() \{ {rv}.process({JSON.stringify{code}}, true, true) \}'
+               'function {invoke}() \{ {rv}.repl.process({JSON.stringify{code}}, true, true) \}'
             code.repple-paste[raw] %
                onclick = '{invoke}()'
                code
@@ -216,6 +216,7 @@ install{@, _options} =
             = cards
             = language
             = theme
+            indent = settings.indent??.raw{} or 3
             after = settings.after??.raw{} or null
          }
          reg{@, language, theme}
