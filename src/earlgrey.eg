@@ -10,11 +10,13 @@ require:
       stdeditor
       stdsetup
       codemirror
+   repple -> Outputter
 
 provide:
    setup
    codemirror
    stdsetup
+   Outputter
 
 
 async setup{config} =

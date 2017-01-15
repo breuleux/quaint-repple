@@ -7,11 +7,13 @@ require:
       stdeditor
       stdsetup
       codemirror
+   repple -> Outputter
 
 provide:
    setup
    codemirror
    stdsetup
+   Outputter
 
 
 _evaluate = eval
