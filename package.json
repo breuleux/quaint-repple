@@ -16,20 +16,21 @@
   "main": "./lib/index.js",
   "dependencies": {
     "chalk": "^1.1.1",
-    "codemirror": "^5.11.0",
+    "codemirror": "^5.23.0",
     "earlgrey": "0.0.13",
-    "earlgrey-runtime": ">=0.0.11",
-    "inquirer-promise": ">=0.0.3",
+    "earlgrey-runtime": "^0.1.0",
+    "inquirer-shortcuts": "^1.1.0",
     "jquery": "^2.2.0",
     "quaint": "0.0.15",
-    "quaint-javascript": "0.0.8",
-    "repple": "0.0.2"
+    "quaint-javascript": "^0.1.0",
+    "repple": "^0.1.0",
+    "uglifyify": "^3.0.4"
   },
   "devDependencies": {
-    "earlgrey": ">=0.0.13",
+    "earl-mocha": ">=0.0.3",
+    "earlgrey": "^0.1.0",
     "mocha": "^2.2.1",
-    "quaint": ">=0.0.15",
-    "earl-mocha": ">=0.0.3"
+    "quaint": "^0.1.0"
   },
   "scripts": {
     "pack": "browserify -r ./lib/earlgrey.js:quaint-repple-earlgrey | uglifyjs -c -m > client/earlgrey.js; browserify -r ./lib/javascript.js:quaint-repple-javascript | uglifyjs -c -m > client/javascript.js",
